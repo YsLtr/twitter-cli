@@ -1103,6 +1103,12 @@ class TwitterClient:
             # a different TLS fingerprint on the same IP — a detection vector.
             cffi_session = _get_cffi_session()
             ct_headers = _gen_ct_headers()
+            # Local patch (public-clis/twitter-cli#88): the ClientTransaction init
+            # request must carry the session cookies. The anonymous homepage no longer
+            # ships the `ondemand.s` marker, so initialisation fails and SearchTimeline
+            # answers 404. Fetching the authenticated page (cookies attached) restores
+            # the marker. Status/feed/user/tweet are unaffected either way.
+            ct_headers["Cookie"] = self._cookie_string or "auth_token=%s; ct0=%s" % (self._auth_token, self._ct0)
             home_page = cffi_session.get(
                 "https://x.com", headers=ct_headers, timeout=10,
             )
